@@ -1,5 +1,18 @@
-import { generateText } from "ai"
+import { streamObject } from "ai"
 import { openai } from "@ai-sdk/openai"
+import { z } from "zod"
+
+// Define the schema for curriculum structure
+const curriculumSchema = z.object({
+  title: z.string(),
+  topics: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      description: z.string(),
+    })
+  ),
+})
 
 export async function POST(req: Request) {
   try {
@@ -9,41 +22,21 @@ export async function POST(req: Request) {
       return Response.json({ error: "Invalid input provided" }, { status: 400 })
     }
 
-    const { text } = await generateText({
-      model: openai("gpt-4o", {
-        apiKey: process.env.OPENAI_API_KEY,
-      }),
+    const result = await streamObject({
+      model: openai("gpt-4o"),
+      schema: curriculumSchema,
       prompt: `Create a comprehensive learning curriculum for: "${input}"
 
-Return ONLY a valid JSON object with this exact structure:
-{
-  "title": "Learning [Subject]",
-  "topics": [
-    {
-      "id": "1",
-      "title": "Topic Title",
-      "description": "Brief description of what will be learned"
-    }
-  ]
-}
+Create 8-12 topics that progress logically from beginner to advanced concepts. Each topic should be substantial enough for a focused learning session.
 
-Create 8-12 topics that progress logically from beginner to advanced concepts. Each topic should be substantial enough for a focused learning session. Make sure the response is valid JSON only.`,
+The title should follow the format "Learning [Subject]".
+Each topic should have:
+- A unique sequential id starting from "1"
+- A clear, descriptive title
+- A brief description of what will be learned in that topic`,
     })
 
-    let curriculumData
-    try {
-      curriculumData = JSON.parse(text)
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError)
-      return Response.json({ error: "Failed to parse curriculum data" }, { status: 500 })
-    }
-
-    // Validate the structure
-    if (!curriculumData.title || !Array.isArray(curriculumData.topics)) {
-      return Response.json({ error: "Invalid curriculum structure" }, { status: 500 })
-    }
-
-    return Response.json(curriculumData)
+    return result.toTextStreamResponse()
   } catch (error) {
     console.error("Error generating curriculum:", error)
     return Response.json({ error: "Failed to generate curriculum" }, { status: 500 })

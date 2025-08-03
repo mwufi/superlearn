@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import type { ChangeEvent } from "react"
+import { experimental_useObject as useObject } from "@ai-sdk/react"
+import { z } from "zod"
 
 interface Topic {
   id: string
@@ -15,70 +17,97 @@ interface Curriculum {
   topics: Topic[]
 }
 
+// Define schemas for the AI responses
+const curriculumSchema = z.object({
+  title: z.string(),
+  topics: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      description: z.string(),
+    })
+  ),
+})
+
+const contentSchema = z.object({
+  content: z.object({
+    overview: z.string(),
+    keyConcepts: z.array(z.string()),
+    practicalExamples: z.array(z.string()),
+    importantPoints: z.array(z.string()),
+    exercises: z.array(z.string()),
+  })
+})
+
 export default function CurriculumGenerator() {
   const [input, setInput] = useState("")
-  const [curriculum, setCurriculum] = useState<Curriculum | null>(null)
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null)
-  const [loading, setLoading] = useState(false)
   const [view, setView] = useState<"input" | "curriculum" | "learning">("input")
+  
+  // Use AI SDK hooks for streaming
+  const { object: curriculum, submit: generateCurriculum, isLoading: loadingCurriculum } = useObject({
+    api: "/api/generate-curriculum",
+    schema: curriculumSchema,
+  })
+  
+  const { object: contentData, submit: generateContent, isLoading: loadingContent } = useObject({
+    api: "/api/generate-content",
+    schema: contentSchema,
+  })
 
-  const generateCurriculum = async () => {
+  const handleGenerateCurriculum = async () => {
     if (!input.trim()) return
-
-    setLoading(true)
-    try {
-      const response = await fetch("/api/generate-curriculum", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ input }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to generate curriculum")
-      }
-
-      const curriculumData = await response.json()
-
-      // Validate the response structure
-      if (!curriculumData || !curriculumData.topics || !Array.isArray(curriculumData.topics)) {
-        throw new Error("Invalid curriculum data received")
-      }
-
-      setCurriculum(curriculumData)
-      setView("curriculum")
-    } catch (error) {
-      console.error("Error generating curriculum:", error)
-      // You could add a state for error messages here
-    } finally {
-      setLoading(false)
-    }
+    
+    await generateCurriculum({ input })
+    setView("curriculum")
   }
 
   const generateTopicContent = async (topic: Topic) => {
-    setLoading(true)
-    try {
-      const response = await fetch("/api/generate-content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          topic: topic.title,
-          curriculumTitle: curriculum?.title,
-        }),
-      })
+    setCurrentTopic(topic)
+    setView("learning")
+    
+    await generateContent({
+      topic: topic.title,
+      curriculumTitle: curriculum?.title,
+    })
+  }
 
-      const { content } = await response.json()
-      const updatedTopic = { ...topic, content }
-      setCurrentTopic(updatedTopic)
-      setView("learning")
-    } catch (error) {
-      console.error("Error generating content:", error)
-    } finally {
-      setLoading(false)
+  const formatContent = (content: any) => {
+    if (!content) return ""
+    
+    let formatted = `## Overview\n\n${content.overview}\n\n`
+    
+    if (content.keyConcepts?.length > 0) {
+      formatted += `## Key Concepts\n\n`
+      content.keyConcepts.forEach((concept: string) => {
+        formatted += `• ${concept}\n`
+      })
+      formatted += "\n"
     }
+    
+    if (content.practicalExamples?.length > 0) {
+      formatted += `## Practical Examples\n\n`
+      content.practicalExamples.forEach((example: string, index: number) => {
+        formatted += `${index + 1}. ${example}\n\n`
+      })
+    }
+    
+    if (content.importantPoints?.length > 0) {
+      formatted += `## Important Points\n\n`
+      content.importantPoints.forEach((point: string) => {
+        formatted += `⚡ ${point}\n`
+      })
+      formatted += "\n"
+    }
+    
+    if (content.exercises?.length > 0) {
+      formatted += `## Exercises\n\n`
+      content.exercises.forEach((exercise: string, index: number) => {
+        formatted += `**Exercise ${index + 1}:** ${exercise}\n\n`
+      })
+    }
+    
+    return formatted
   }
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,10 +138,12 @@ export default function CurriculumGenerator() {
             </div>
 
             <div className="prose prose-gray max-w-none">
-              {loading ? (
+              {loadingContent ? (
                 <div className="text-gray-400">generating content...</div>
               ) : (
-                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">{currentTopic.content}</div>
+                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                  {contentData?.content ? formatContent(contentData.content) : currentTopic.content}
+                </div>
               )}
             </div>
 
@@ -141,51 +172,63 @@ export default function CurriculumGenerator() {
     )
   }
 
-  if (view === "curriculum" && curriculum) {
-    return (
-      <div className="min-h-screen bg-white">
-        <div className="max-w-4xl mx-auto px-8 py-16">
-          <nav className="mb-16">
-            <button onClick={() => setView("input")} className="text-gray-400 hover:text-gray-600 transition-colors">
-              ← new curriculum
-            </button>
-          </nav>
-
-          <div className="space-y-12">
-            <div>
-              <h1 className="text-2xl font-light text-gray-900 mb-8">{curriculum.title}</h1>
-              <button
-                onClick={() => generateTopicContent(curriculum.topics[0])}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                start learning →
+  if (view === "curriculum") {
+    // Show curriculum as it's being generated or after completion
+    if (curriculum || loadingCurriculum) {
+      return (
+        <div className="min-h-screen bg-white">
+          <div className="max-w-4xl mx-auto px-8 py-16">
+            <nav className="mb-16">
+              <button onClick={() => setView("input")} className="text-gray-400 hover:text-gray-600 transition-colors">
+                ← new curriculum
               </button>
-            </div>
+            </nav>
 
-            {curriculum?.topics?.length > 0 ? (
-              <div className="space-y-6">
-                {curriculum.topics.map((topic, index) => (
-                  <div key={topic.id} className="group">
-                    <button
-                      onClick={() => generateTopicContent(topic)}
-                      className="block w-full text-left space-y-2 hover:bg-gray-50 p-4 -m-4 rounded transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xs text-gray-400 font-mono">{String(index + 1).padStart(2, "0")}</span>
-                        <h3 className="text-gray-900 group-hover:text-black transition-colors">{topic.title}</h3>
-                      </div>
-                      <p className="text-sm text-gray-500 ml-8">{topic.description}</p>
-                    </button>
-                  </div>
-                ))}
+            <div className="space-y-12">
+              <div>
+                <h1 className="text-2xl font-light text-gray-900 mb-8">
+                  {curriculum.title || "Loading..."}
+                </h1>
+                {curriculum.topics && curriculum.topics.length > 0 && (
+                  <button
+                    onClick={() => generateTopicContent(curriculum.topics[0])}
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    start learning →
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="text-gray-400">No topics generated. Please try again.</div>
-            )}
+
+              {curriculum?.topics?.length > 0 ? (
+                <div className="space-y-6">
+                  {curriculum.topics.map((topic, index) => (
+                    <div key={topic.id} className="group animate-fadeIn">
+                      <button
+                        onClick={() => generateTopicContent(topic)}
+                        className="block w-full text-left space-y-2 hover:bg-gray-50 p-4 -m-4 rounded transition-colors"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xs text-gray-400 font-mono">{String(index + 1).padStart(2, "0")}</span>
+                          <h3 className="text-gray-900 group-hover:text-black transition-colors">{topic.title}</h3>
+                        </div>
+                        <p className="text-sm text-gray-500 ml-8">{topic.description}</p>
+                      </button>
+                    </div>
+                  ))}
+                  {loadingCurriculum && (
+                    <div className="text-gray-400 text-sm animate-pulse">loading more topics...</div>
+                  )}
+                </div>
+              ) : loadingCurriculum ? (
+                <div className="text-gray-400">generating topics...</div>
+              ) : (
+                <div className="text-gray-400">No topics generated. Please try again.</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    )
+      )
+    }
   }
 
   return (
@@ -203,16 +246,16 @@ export default function CurriculumGenerator() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="machine learning fundamentals, spanish conversation, react development..."
               className="w-full h-32 text-gray-700 placeholder-gray-400 bg-transparent border-none outline-none resize-none text-lg leading-relaxed"
-              disabled={loading}
+              disabled={loadingCurriculum}
             />
 
             <div className="flex items-center space-x-8">
               <button
-                onClick={generateCurriculum}
-                disabled={loading || !input.trim()}
+                onClick={handleGenerateCurriculum}
+                disabled={loadingCurriculum || !input.trim()}
                 className="text-gray-600 hover:text-gray-900 transition-colors disabled:text-gray-300"
               >
-                {loading ? "generating..." : "generate curriculum →"}
+                {loadingCurriculum ? "generating..." : "generate curriculum →"}
               </button>
 
               <div className="text-gray-400">or</div>
@@ -224,7 +267,7 @@ export default function CurriculumGenerator() {
                   onChange={handleFileUpload}
                   accept=".txt,.md,.pdf"
                   className="hidden"
-                  disabled={loading}
+                  disabled={loadingCurriculum}
                 />
               </label>
             </div>
