@@ -55,39 +55,49 @@ export default function CurriculumGenerator() {
   const formatContent = (content: any) => {
     if (!content) return ""
     
-    let formatted = `## Overview\n\n${content.overview}\n\n`
+    let formatted = ""
     
-    if (content.keyConcepts?.length > 0) {
+    // Add sections as they become available
+    if (content.overview) {
+      formatted += `## Overview\n\n${content.overview}\n\n`
+    }
+    
+    if (content.keyConcepts && content.keyConcepts.length > 0) {
       formatted += `## Key Concepts\n\n`
       content.keyConcepts.forEach((concept: string) => {
-        formatted += `• ${concept}\n`
+        if (concept) formatted += `• ${concept}\n`
       })
       formatted += "\n"
     }
     
-    if (content.practicalExamples?.length > 0) {
+    if (content.practicalExamples && content.practicalExamples.length > 0) {
       formatted += `## Practical Examples\n\n`
       content.practicalExamples.forEach((example: string, index: number) => {
-        formatted += `${index + 1}. ${example}\n\n`
+        if (example) formatted += `${index + 1}. ${example}\n\n`
       })
     }
     
-    if (content.importantPoints?.length > 0) {
+    if (content.importantPoints && content.importantPoints.length > 0) {
       formatted += `## Important Points\n\n`
       content.importantPoints.forEach((point: string) => {
-        formatted += `⚡ ${point}\n`
+        if (point) formatted += `⚡ ${point}\n`
       })
       formatted += "\n"
     }
     
-    if (content.exercises?.length > 0) {
+    if (content.exercises && content.exercises.length > 0) {
       formatted += `## Exercises\n\n`
       content.exercises.forEach((exercise: string, index: number) => {
-        formatted += `**Exercise ${index + 1}:** ${exercise}\n\n`
+        if (exercise) formatted += `**Exercise ${index + 1}:** ${exercise}\n\n`
       })
     }
     
-    return formatted
+    // Show loading indicator if we're still streaming
+    if (loadingContent && formatted) {
+      formatted += "\n\n*Loading more content...*"
+    }
+    
+    return formatted || "Generating content..."
   }
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -118,10 +128,10 @@ export default function CurriculumGenerator() {
             </div>
 
             <div className="prose prose-gray max-w-none">
-              {loadingContent ? (
-                <div className="text-gray-400">generating content...</div>
+              {loadingContent && !contentData?.content ? (
+                <div className="text-gray-400 animate-pulse">generating content...</div>
               ) : (
-                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed animate-fadeIn">
                   {contentData?.content ? formatContent(contentData.content) : currentTopic?.content || ""}
                 </div>
               )}
