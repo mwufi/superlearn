@@ -1,23 +1,12 @@
 import { streamObject } from "ai"
 import { openai } from "@ai-sdk/openai"
-import { z } from "zod"
-
-// Define the schema for content structure
-const contentSchema = z.object({
-  content: z.object({
-    overview: z.string(),
-    keyConcepts: z.array(z.string()),
-    practicalExamples: z.array(z.string()),
-    importantPoints: z.array(z.string()),
-    exercises: z.array(z.string()),
-  })
-})
+import { contentSchema } from "./schema"
 
 export async function POST(req: Request) {
   try {
     const { topic, curriculumTitle } = await req.json()
 
-    const result = await streamObject({
+    const result = streamObject({
       model: openai("gpt-4o"),
       schema: contentSchema,
       prompt: `Create detailed learning content for the topic: "${topic}"

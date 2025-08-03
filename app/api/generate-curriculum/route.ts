@@ -1,18 +1,6 @@
 import { streamObject } from "ai"
 import { openai } from "@ai-sdk/openai"
-import { z } from "zod"
-
-// Define the schema for curriculum structure
-const curriculumSchema = z.object({
-  title: z.string(),
-  topics: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-    })
-  ),
-})
+import { curriculumSchema } from "./schema"
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +10,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "Invalid input provided" }, { status: 400 })
     }
 
-    const result = await streamObject({
+    const result = streamObject({
       model: openai("gpt-4o"),
       schema: curriculumSchema,
       prompt: `Create a comprehensive learning curriculum for: "${input}"

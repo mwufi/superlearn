@@ -3,7 +3,8 @@
 import { useState } from "react"
 import type { ChangeEvent } from "react"
 import { experimental_useObject as useObject } from "@ai-sdk/react"
-import { z } from "zod"
+import { curriculumSchema } from "./api/generate-curriculum/schema"
+import { contentSchema } from "./api/generate-content/schema"
 
 interface Topic {
   id: string
@@ -17,27 +18,6 @@ interface Curriculum {
   topics: Topic[]
 }
 
-// Define schemas for the AI responses
-const curriculumSchema = z.object({
-  title: z.string(),
-  topics: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      description: z.string(),
-    })
-  ),
-})
-
-const contentSchema = z.object({
-  content: z.object({
-    overview: z.string(),
-    keyConcepts: z.array(z.string()),
-    practicalExamples: z.array(z.string()),
-    importantPoints: z.array(z.string()),
-    exercises: z.array(z.string()),
-  })
-})
 
 export default function CurriculumGenerator() {
   const [input, setInput] = useState("")
@@ -45,12 +25,12 @@ export default function CurriculumGenerator() {
   const [view, setView] = useState<"input" | "curriculum" | "learning">("input")
   
   // Use AI SDK hooks for streaming
-  const { object: curriculum, submit: generateCurriculum, isLoading: loadingCurriculum } = useObject({
+  const { object: curriculum, submit: submitCurriculum, isLoading: loadingCurriculum } = useObject({
     api: "/api/generate-curriculum",
     schema: curriculumSchema,
   })
   
-  const { object: contentData, submit: generateContent, isLoading: loadingContent } = useObject({
+  const { object: contentData, submit: submitContent, isLoading: loadingContent } = useObject({
     api: "/api/generate-content",
     schema: contentSchema,
   })
@@ -58,15 +38,15 @@ export default function CurriculumGenerator() {
   const handleGenerateCurriculum = async () => {
     if (!input.trim()) return
     
-    await generateCurriculum({ input })
     setView("curriculum")
+    await submitCurriculum({ input })
   }
 
   const generateTopicContent = async (topic: Topic) => {
     setCurrentTopic(topic)
     setView("learning")
     
-    await generateContent({
+    await submitContent({
       topic: topic.title,
       curriculumTitle: curriculum?.title,
     })
@@ -133,8 +113,8 @@ export default function CurriculumGenerator() {
 
           <div className="space-y-8">
             <div>
-              <h1 className="text-2xl font-light text-gray-900 mb-2">{currentTopic.title}</h1>
-              <p className="text-gray-500 text-sm">{curriculum?.title}</p>
+              <h1 className="text-2xl font-light text-gray-900 mb-2">{currentTopic?.title || "Loading..."}</h1>
+              <p className="text-gray-500 text-sm">{curriculum?.title || ""}</p>
             </div>
 
             <div className="prose prose-gray max-w-none">
@@ -142,7 +122,7 @@ export default function CurriculumGenerator() {
                 <div className="text-gray-400">generating content...</div>
               ) : (
                 <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-                  {contentData?.content ? formatContent(contentData.content) : currentTopic.content}
+                  {contentData?.content ? formatContent(contentData.content) : currentTopic?.content || ""}
                 </div>
               )}
             </div>
@@ -152,15 +132,16 @@ export default function CurriculumGenerator() {
                 <div className="text-sm text-gray-400 mb-4">next topics</div>
                 <div className="space-y-2">
                   {curriculum.topics
-                    .filter((t) => t.id !== currentTopic.id)
+                    .filter((t) => t.id !== currentTopic?.id)
                     .slice(0, 3)
                     .map((topic) => (
                       <button
-                        key={topic.id}
+                        key={topic?.id || index}
                         onClick={() => generateTopicContent(topic)}
                         className="block text-left text-gray-600 hover:text-gray-900 transition-colors"
+                        disabled={!topic?.title}
                       >
-                        {topic.title}
+                        {topic?.title || "Loading..."}
                       </button>
                     ))}
                 </div>
@@ -187,9 +168,9 @@ export default function CurriculumGenerator() {
             <div className="space-y-12">
               <div>
                 <h1 className="text-2xl font-light text-gray-900 mb-8">
-                  {curriculum.title || "Loading..."}
+                  {curriculum?.title || "Loading..."}
                 </h1>
-                {curriculum.topics && curriculum.topics.length > 0 && (
+                {curriculum?.topics && curriculum.topics.length > 0 && (
                   <button
                     onClick={() => generateTopicContent(curriculum.topics[0])}
                     className="text-gray-600 hover:text-gray-900 transition-colors"
@@ -199,19 +180,20 @@ export default function CurriculumGenerator() {
                 )}
               </div>
 
-              {curriculum?.topics?.length > 0 ? (
+              {curriculum?.topics && curriculum.topics.length > 0 ? (
                 <div className="space-y-6">
                   {curriculum.topics.map((topic, index) => (
-                    <div key={topic.id} className="group animate-fadeIn">
+                    <div key={topic?.id || index} className="group animate-fadeIn">
                       <button
                         onClick={() => generateTopicContent(topic)}
                         className="block w-full text-left space-y-2 hover:bg-gray-50 p-4 -m-4 rounded transition-colors"
+                        disabled={!topic?.title}
                       >
                         <div className="flex items-center space-x-3">
                           <span className="text-xs text-gray-400 font-mono">{String(index + 1).padStart(2, "0")}</span>
-                          <h3 className="text-gray-900 group-hover:text-black transition-colors">{topic.title}</h3>
+                          <h3 className="text-gray-900 group-hover:text-black transition-colors">{topic?.title || ""}</h3>
                         </div>
-                        <p className="text-sm text-gray-500 ml-8">{topic.description}</p>
+                        <p className="text-sm text-gray-500 ml-8">{topic?.description || ""}</p>
                       </button>
                     </div>
                   ))}
