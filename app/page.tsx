@@ -134,9 +134,9 @@ export default function CurriculumGenerator() {
                   {curriculum.topics
                     .filter((t) => t.id !== currentTopic?.id)
                     .slice(0, 3)
-                    .map((topic) => (
+                    .map((topic, idx) => (
                       <button
-                        key={topic?.id || index}
+                        key={`next-topic-${topic?.id || idx}`}
                         onClick={() => generateTopicContent(topic)}
                         className="block text-left text-gray-600 hover:text-gray-900 transition-colors"
                         disabled={!topic?.title}
@@ -183,7 +183,7 @@ export default function CurriculumGenerator() {
               {curriculum?.topics && curriculum.topics.length > 0 ? (
                 <div className="space-y-6">
                   {curriculum.topics.map((topic, index) => (
-                    <div key={topic?.id || index} className="group animate-fadeIn">
+                    <div key={`topic-${topic?.id || index}`} className="group animate-fadeIn">
                       <button
                         onClick={() => generateTopicContent(topic)}
                         className="block w-full text-left space-y-2 hover:bg-gray-50 p-4 -m-4 rounded transition-colors"
