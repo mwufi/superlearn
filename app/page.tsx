@@ -1,97 +1,65 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { db, type Curriculum } from "./db/storage"
+import { MainLayout } from "@/components/main-layout"
+import { ChatInput } from "@/components/ui/chat-input"
+import { Sparkles, Brain, HelpCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function HomePage() {
-  const [curricula, setCurricula] = useState<Curriculum[]>([])
-
-  useEffect(() => {
-    setCurricula(db.curricula.getAll())
-  }, [])
-
-  const handleDeleteCurriculum = (e: React.MouseEvent, id: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (confirm("Are you sure you want to delete this curriculum?")) {
-      db.curricula.delete(id)
-      setCurricula(db.curricula.getAll())
-    }
+  const router = useRouter()
+  
+  const handleSubmit = (message: string) => {
+    console.log("Message submitted:", message)
+    // TODO: Handle message submission
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto px-8 py-16">
-        <div className="space-y-12">
-          <div className="flex items-center justify-between">
+    <MainLayout>
+      <div className="flex flex-col h-full p-6">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-3xl w-full space-y-8 text-center">
             <div>
-              <h1 className="text-2xl font-light text-gray-900 mb-2">your curricula</h1>
-              <p className="text-gray-500 text-sm">continue learning or create something new</p>
+              <h1 className="text-4xl font-bold mb-2">Welcome to Superlearn</h1>
+              <p className="text-muted-foreground text-lg">
+                Your AI-powered learning companion. Ask anything, learn everything.
+              </p>
             </div>
-            <Link
-              href="/curricula/new"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              new curriculum →
-            </Link>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+              <button 
+                onClick={() => router.push('/explain')}
+                className="p-4 rounded-lg border border-border hover:bg-accent transition-colors text-left">
+                <Sparkles className="h-5 w-5 mb-2 text-primary" />
+                <h3 className="font-medium">Quick Explain</h3>
+                <p className="text-sm text-muted-foreground">Get simple explanations</p>
+              </button>
+              
+              <button 
+                onClick={() => router.push('/structured')}
+                className="p-4 rounded-lg border border-border hover:bg-accent transition-colors text-left">
+                <Brain className="h-5 w-5 mb-2 text-primary" />
+                <h3 className="font-medium">Build Curriculum</h3>
+                <p className="text-sm text-muted-foreground">Structured learning paths</p>
+              </button>
+              
+              <button 
+                onClick={() => router.push('/quiz')}
+                className="p-4 rounded-lg border border-border hover:bg-accent transition-colors text-left">
+                <HelpCircle className="h-5 w-5 mb-2 text-primary" />
+                <h3 className="font-medium">Take a Quiz</h3>
+                <p className="text-sm text-muted-foreground">Test your knowledge</p>
+              </button>
+            </div>
           </div>
-
-          {curricula.length > 0 ? (
-            <div className="space-y-6">
-              {curricula.map((curriculum) => (
-                <Link
-                  key={curriculum.id}
-                  href={`/curricula/${curriculum.id}`}
-                  className="block group"
-                >
-                  <div className="p-6 border border-gray-100 rounded hover:border-gray-300 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <h3 className="text-lg text-gray-900 group-hover:text-black transition-colors">
-                          {curriculum.title}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          {curriculum.topics.length} topics • Created {new Date(curriculum.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => handleDeleteCurriculum(e, curriculum.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors text-sm opacity-0 group-hover:opacity-100"
-                      >
-                        delete
-                      </button>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-400 mb-6">no curricula yet</p>
-              <Link
-                href="/curricula/new"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                create your first curriculum →
-              </Link>
-            </div>
-          )}
+        </div>
+        
+        <div className="w-full max-w-3xl mx-auto">
+          <ChatInput 
+            onSubmit={handleSubmit}
+            placeholder="What would you like to learn today?"
+          />
         </div>
       </div>
-      
-      <div className="fixed bottom-0 left-0 right-0 p-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <Link 
-            href="/about" 
-            className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
-          >
-            This is not the Superlearn we're envisioning.{" "}
-            <span className="underline">Learn more</span>
-          </Link>
-        </div>
-      </div>
-    </div>
+    </MainLayout>
   )
 }
