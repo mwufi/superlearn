@@ -23,7 +23,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto px-8 py-16">
+      <div className="max-w-4xl mx-auto px-8 py-16 pb-32">
         <div className="space-y-12">
           <div className="flex items-center justify-between">
             <div>

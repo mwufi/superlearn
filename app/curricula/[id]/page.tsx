@@ -90,7 +90,7 @@ export default function CurriculumPage({
     <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-8 py-16">
         <nav className="mb-16 flex items-center justify-between">
-          <Link href="/" className="text-gray-400 hover:text-gray-600 transition-colors">
+          <Link href="/curricula" className="text-gray-400 hover:text-gray-600 transition-colors">
             ← back to all curricula
           </Link>
           <button
