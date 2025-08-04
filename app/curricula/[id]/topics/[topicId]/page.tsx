@@ -6,11 +6,12 @@ import Link from "next/link"
 import { experimental_useObject as useObject } from "@ai-sdk/react"
 import { contentSchema } from "@/app/api/generate-content/schema"
 import { db, type Curriculum, type Topic } from "@/app/db/storage"
+import Markdown from "react-markdown"
 
-export default function TopicPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string; topicId: string }> 
+export default function TopicPage({
+  params
+}: {
+  params: Promise<{ id: string; topicId: string }>
 }) {
   const { id, topicId } = use(params)
   const router = useRouter()
@@ -29,16 +30,16 @@ export default function TopicPage({
       router.push("/")
       return
     }
-    
+
     const topic = loadedCurriculum.topics.find(t => t.id === topicId)
     if (!topic) {
       router.push(`/curricula/${id}`)
       return
     }
-    
+
     setCurriculum(loadedCurriculum)
     setCurrentTopic(topic)
-    
+
     // Load saved content if available
     const storedContent = db.content.getByTopicId(id, topicId)
     if (storedContent) {
@@ -60,7 +61,7 @@ export default function TopicPage({
 
   const generateContent = async () => {
     if (!currentTopic) return
-    
+
     await submitContent({
       topic: currentTopic.title,
       curriculumTitle: curriculum?.title,
@@ -69,13 +70,13 @@ export default function TopicPage({
 
   const formatContent = (content: any) => {
     if (!content) return ""
-    
+
     let formatted = ""
-    
+
     if (content.overview) {
       formatted += `## Overview\n\n${content.overview}\n\n`
     }
-    
+
     if (content.keyConcepts && content.keyConcepts.length > 0) {
       formatted += `## Key Concepts\n\n`
       content.keyConcepts.forEach((concept: string) => {
@@ -83,14 +84,14 @@ export default function TopicPage({
       })
       formatted += "\n"
     }
-    
+
     if (content.practicalExamples && content.practicalExamples.length > 0) {
       formatted += `## Practical Examples\n\n`
       content.practicalExamples.forEach((example: string, index: number) => {
         if (example) formatted += `${index + 1}. ${example}\n\n`
       })
     }
-    
+
     if (content.importantPoints && content.importantPoints.length > 0) {
       formatted += `## Important Points\n\n`
       content.importantPoints.forEach((point: string) => {
@@ -98,18 +99,18 @@ export default function TopicPage({
       })
       formatted += "\n"
     }
-    
+
     if (content.exercises && content.exercises.length > 0) {
       formatted += `## Exercises\n\n`
       content.exercises.forEach((exercise: string, index: number) => {
         if (exercise) formatted += `**Exercise ${index + 1}:** ${exercise}\n\n`
       })
     }
-    
+
     if (loadingContent && formatted) {
       formatted += "\n\n*Loading more content...*"
     }
-    
+
     return formatted || "No content available"
   }
 
@@ -133,7 +134,7 @@ export default function TopicPage({
     <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-8 py-16">
         <nav className="mb-16">
-          <Link 
+          <Link
             href={`/curricula/${id}`}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -162,8 +163,22 @@ export default function TopicPage({
               {loadingContent && !displayContent ? (
                 <div className="text-gray-400 animate-pulse">generating content...</div>
               ) : (
-                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed animate-fadeIn">
-                  {formatContent(displayContent)}
+                <div className="animate-fadeIn prose prose-gray prose-p:whitespace-pre-wrap max-w-none
+                      prose-headings:font-light prose-headings:text-gray-900
+                      prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
+                      prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+                      prose-p:text-gray-700 prose-p:leading-relaxed
+                      prose-ul:text-gray-700 prose-ol:text-gray-700
+                      prose-li:my-1 prose-li:marker:text-gray-400
+                      [&_li_p]:my-0 [&_li_p:first-child]:mt-0 [&_li_p:last-child]:mb-0
+                      prose-strong:text-gray-900 prose-strong:font-semibold
+                      prose-code:text-gray-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                      prose-pre:bg-gray-100 prose-pre:text-gray-800
+                      prose-blockquote:text-gray-600 prose-blockquote:border-gray-300">
+                  <Markdown
+                  >
+                    {formatContent(displayContent)}
+                  </Markdown>
                 </div>
               )}
             </div>
