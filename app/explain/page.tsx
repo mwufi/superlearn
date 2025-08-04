@@ -5,6 +5,7 @@ import { MainLayout } from "@/components/main-layout"
 import { ChatInput } from "@/components/ui/chat-input"
 import { Sparkles, Lightbulb, Zap, Smile } from "lucide-react"
 import { motion } from "framer-motion"
+import LoadingSpinner from "./LoadingSpinner"
 
 export default function ExplainPage() {
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([])
@@ -13,12 +14,12 @@ export default function ExplainPage() {
   const handleSubmit = async (message: string) => {
     setMessages(prev => [...prev, { role: "user", content: message }])
     setIsLoading(true)
-    
+
     // TODO: Call AI API for explanation
     setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: "I'll explain that in a fun and easy way! This is where the AI explanation would go..." 
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "I'll explain that in a fun and easy way! This is where the AI explanation would go..."
       }])
       setIsLoading(false)
     }, 1000)
@@ -70,33 +71,22 @@ export default function ExplainPage() {
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-4 rounded-lg ${
-                    message.role === "user" 
-                      ? "bg-primary text-primary-foreground ml-auto max-w-[80%]" 
-                      : "bg-muted max-w-[80%]"
-                  }`}
+                  className={`p-4 rounded-lg ${message.role === "user"
+                    ? "bg-primary text-primary-foreground ml-auto max-w-[80%]"
+                    : "bg-muted max-w-[80%]"
+                    }`}
                 >
                   {message.content}
                 </motion.div>
               ))}
-              {isLoading && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                  </motion.div>
-                  <span>Thinking of a fun explanation...</span>
-                </div>
-              )}
+              {isLoading && <LoadingSpinner />}
             </div>
           </div>
         </div>
-        
+
         <div className="border-t border-border p-6">
           <div className="max-w-3xl mx-auto">
-            <ChatInput 
+            <ChatInput
               onSubmit={handleSubmit}
               placeholder="What would you like me to explain?"
             />
