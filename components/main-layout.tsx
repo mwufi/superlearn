@@ -148,15 +148,15 @@ export function MainLayout({ children }: MainLayoutProps) {
         </Sidebar>
         
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0">
           {/* Top Bar */}
-          <header className="h-16 border-b border-border bg-background px-6 flex items-center">
+          <header className="flex-shrink-0 h-16 border-b border-border bg-background px-4 lg:px-6 flex items-center">
             <SidebarTrigger />
             <h1 className="ml-4 text-lg font-semibold">Superlearn</h1>
           </header>
           
           {/* Content */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto min-h-0">
             {children}
           </main>
         </div>

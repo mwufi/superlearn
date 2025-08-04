@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, Menu } from "lucide-react"
 
 type SidebarContextValue = {
@@ -23,8 +22,19 @@ export function useSidebar() {
 }
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = React.useState(true)
+  const [isOpen, setIsOpen] = React.useState(false)
   const [isCollapsed, setIsCollapsed] = React.useState(false)
+  
+  // Set initial state based on screen size
+  React.useEffect(() => {
+    const checkScreenSize = () => {
+      setIsOpen(window.innerWidth >= 1024) // lg breakpoint
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   const value = React.useMemo(
     () => ({ isOpen, isCollapsed, setIsOpen, setIsCollapsed }),
@@ -39,26 +49,29 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
-  const { isOpen, isCollapsed } = useSidebar()
+  const { isOpen, isCollapsed, setIsOpen } = useSidebar()
 
   return (
-    <AnimatePresence>
+    <>
+      {/* Mobile overlay */}
       {isOpen && (
-        <motion.aside
-          initial={{ x: -320 }}
-          animate={{ x: 0 }}
-          exit={{ x: -320 }}
-          transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          className={cn(
-            "fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar border-r border-sidebar-border",
-            isCollapsed ? "w-16" : "w-64",
-            "lg:relative lg:translate-x-0"
-          )}
-        >
-          {children}
-        </motion.aside>
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
       )}
-    </AnimatePresence>
+      
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          isCollapsed ? "w-16" : "w-64",
+          !isOpen && "-translate-x-full",
+          "lg:relative lg:translate-x-0"
+        )}
+      >
+        {children}
+      </aside>
+    </>
   )
 }
 
@@ -89,14 +102,14 @@ export function SidebarTrigger() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md hover:bg-accent"
+        className="lg:hidden p-2 rounded-md hover:bg-accent"
       >
         <Menu className="h-5 w-5" />
       </button>
       {isOpen && (
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:flex absolute -right-3 top-7 z-50 h-6 w-6 items-center justify-center rounded-full border bg-background hover:bg-accent"
+          className="hidden lg:flex absolute -right-3 top-6 z-50 h-6 w-6 items-center justify-center rounded-full border bg-background hover:bg-accent"
         >
           <ChevronLeft className={cn("h-4 w-4", isCollapsed && "rotate-180")} />
         </button>
