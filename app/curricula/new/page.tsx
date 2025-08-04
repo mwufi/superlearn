@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { ChangeEvent } from "react"
@@ -10,6 +10,10 @@ export default function NewCurriculumPage() {
   const router = useRouter()
   const [input, setInput] = useState("")
   const [isCreating, setIsCreating] = useState(false)
+
+  useEffect(() => {
+    document.title = "New Curriculum | Superlearn"
+  }, [])
 
   const handleGenerateCurriculum = async () => {
     if (!input.trim() || isCreating) return

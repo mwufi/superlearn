@@ -69,6 +69,13 @@ export default function CurriculumPage({
     }
   }
 
+  // Update document title
+  useEffect(() => {
+    if (curriculum?.title) {
+      document.title = `${curriculum.title} | Superlearn`
+    }
+  }, [curriculum?.title])
+
   if (!curriculum) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">

@@ -1,0 +1,25 @@
+<svg width="473" height="443" viewBox="0 0 473 443" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="32" y="32" width="287" height="253" rx="57" fill="#9356F0" />
+    <rect x="154" y="158" width="287" height="253" rx="57" fill="#9356F0" />
+    <g style="mix-blend-mode:plus-lighter" filter="url(#filter0_f_26_151)">
+        <rect x="32" y="32" width="287" height="253" rx="57" fill="#9356F0" />
+    </g>
+    <g style="mix-blend-mode:plus-lighter" filter="url(#filter1_f_26_151)">
+        <rect x="154" y="158" width="287" height="253" rx="57" fill="#9356F0" />
+    </g>
+    <defs>
+        <filter id="filter0_f_26_151" x="0.799999" y="0.799999" width="349.4" height="315.4"
+            filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix" />
+            <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+            <feGaussianBlur stdDeviation="15.6" result="effect1_foregroundBlur_26_151" />
+        </filter>
+        <filter id="filter1_f_26_151" x="122.8" y="126.8" width="349.4" height="315.4"
+            filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix" />
+            <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+            <feGaussianBlur stdDeviation="15.6" result="effect1_foregroundBlur_26_151" />
+        </filter>
+    </defs>
+</svg>
+    

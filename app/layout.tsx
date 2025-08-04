@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "curriculum generator",
+  title: "Superlearn v0",
   description: "ai-powered learning path generator",
 }
 

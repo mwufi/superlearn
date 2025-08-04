@@ -152,6 +152,13 @@ export default function TopicPage({
     return curriculum.topics.slice(currentIndex + 1, currentIndex + 4)
   }
 
+  // Update document title
+  useEffect(() => {
+    if (currentTopic?.title && curriculum?.title) {
+      document.title = `${currentTopic.title} - ${curriculum.title} | Superlearn`
+    }
+  }, [currentTopic?.title, curriculum?.title])
+
   if (!curriculum || !currentTopic) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
