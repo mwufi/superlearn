@@ -80,6 +80,18 @@ export default function HomePage() {
           )}
         </div>
       </div>
+      
+      <div className="fixed bottom-0 left-0 right-0 p-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <Link 
+            href="/about" 
+            className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
+          >
+            This is not the Superlearn we're envisioning.{" "}
+            <span className="underline">Learn more</span>
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
