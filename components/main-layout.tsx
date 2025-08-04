@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { 
   Brain, 
   Sparkles, 
@@ -13,6 +14,8 @@ import {
   Twitter,
   Globe
 } from "lucide-react"
+import { ChatList } from "@/components/chat-list"
+import { createNewChat } from "@/lib/chat-storage"
 import {
   SidebarProvider,
   Sidebar,
@@ -32,6 +35,7 @@ interface MainLayoutProps {
 function SidebarContents() {
   const { isCollapsed } = useSidebar()
   const [activeItem, setActiveItem] = React.useState("explain")
+  const router = useRouter()
 
   const menuItems = [
     {
@@ -98,6 +102,17 @@ function SidebarContents() {
             </Link>
           ))}
         </SidebarGroup>
+        
+        {!isCollapsed && (
+          <div className="mt-6 px-3">
+            <ChatList 
+              onNewChat={() => {
+                const newChat = createNewChat()
+                router.push(`/${activeItem}?chat=${newChat.id}`)
+              }}
+            />
+          </div>
+        )}
       </SidebarContent>
 
       <SidebarFooter>

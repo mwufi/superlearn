@@ -1,35 +1,110 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { MainLayout } from "@/components/main-layout"
 import { ChatInput } from "@/components/ui/chat-input"
-import { Sparkles, Lightbulb, Zap, Smile } from "lucide-react"
-import { motion } from "framer-motion"
+import { PromptEditor } from "@/components/prompt-editor"
+import { ToolExecution } from "@/components/tool-execution"
+import { Sparkles, Settings } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import LoadingSpinner from "./LoadingSpinner"
+import { 
+  Chat, 
+  Message, 
+  createNewChat, 
+  loadChat, 
+  saveChat, 
+  addMessageToChat 
+} from "@/lib/chat-storage"
+import { ToolCall } from "@/lib/tools/types"
+import { getTool } from "@/lib/tools"
 
 export default function ExplainPage() {
-  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([])
+  const searchParams = useSearchParams()
+  const chatId = searchParams.get('chat')
+  
+  const [currentChat, setCurrentChat] = useState<Chat | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [showPromptEditor, setShowPromptEditor] = useState(false)
+  const [activeToolCalls, setActiveToolCalls] = useState<ToolCall[]>([])
 
-  const handleSubmit = async (message: string) => {
-    setMessages(prev => [...prev, { role: "user", content: message }])
+  // Load or create chat
+  useEffect(() => {
+    if (chatId) {
+      const chat = loadChat(chatId)
+      if (chat) {
+        setCurrentChat(chat)
+        setMessages(chat.messages)
+      }
+    } else {
+      const newChat = createNewChat("Explain Session")
+      setCurrentChat(newChat)
+      setMessages([])
+    }
+  }, [chatId])
+
+  const handlePromptSelect = async (prompt: string, variables: Record<string, string>) => {
+    if (!currentChat) return
+    
+    const userMessage: Message = {
+      id: `msg-${Date.now()}`,
+      role: 'user',
+      content: prompt,
+      timestamp: new Date()
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    addMessageToChat(currentChat.id, userMessage)
+    setShowPromptEditor(false)
     setIsLoading(true)
-
-    // TODO: Call AI API for explanation
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "I'll explain that in a fun and easy way! This is where the AI explanation would go..."
-      }])
-      setIsLoading(false)
-    }, 1000)
+    
+    // Simulate tool execution
+    const toolCall: ToolCall = {
+      id: `tool-${Date.now()}`,
+      tool: 'academic_search',
+      parameters: { query: variables.topic || prompt, limit: 3 },
+      status: 'pending'
+    }
+    
+    setActiveToolCalls([toolCall])
+    
+    // Execute tool
+    setTimeout(async () => {
+      toolCall.status = 'running'
+      setActiveToolCalls([{ ...toolCall }])
+      
+      const tool = getTool('academic_search')
+      if (tool) {
+        const result = await tool.execute(toolCall.parameters)
+        toolCall.status = result.success ? 'completed' : 'failed'
+        toolCall.result = result
+        toolCall.completedAt = new Date()
+        setActiveToolCalls([{ ...toolCall }])
+      }
+      
+      // Generate AI response
+      setTimeout(() => {
+        const assistantMessage: Message = {
+          id: `msg-${Date.now()}`,
+          role: 'assistant',
+          content: `I'll explain ${variables.topic || 'that'} in a simple way! Based on my research, here's what you need to know...`,
+          toolCalls: [toolCall],
+          timestamp: new Date()
+        }
+        
+        setMessages(prev => [...prev, assistantMessage])
+        addMessageToChat(currentChat.id, assistantMessage)
+        setIsLoading(false)
+        setActiveToolCalls([])
+      }, 1000)
+    }, 500)
   }
 
-  const examplePrompts = [
-    { icon: <Lightbulb className="h-4 w-4" />, text: "Why is the sky blue?" },
-    { icon: <Zap className="h-4 w-4" />, text: "How does electricity work?" },
-    { icon: <Smile className="h-4 w-4" />, text: "Explain quantum physics like I'm 5" },
-  ]
+  const handleDirectSubmit = async (message: string) => {
+    handlePromptSelect(message, { topic: message })
+  }
 
   return (
     <MainLayout>
@@ -42,44 +117,59 @@ export default function ExplainPage() {
               <p className="text-muted-foreground">
                 Get simple, fun explanations for anything you're curious about
               </p>
+              <button
+                onClick={() => setShowPromptEditor(!showPromptEditor)}
+                className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-accent transition-colors"
+              >
+                <Settings className="h-3 w-3" />
+                Customize Prompt
+              </button>
             </div>
 
-            {messages.length === 0 && (
-              <div className="grid gap-3 mb-8">
-                <p className="text-sm text-muted-foreground text-center mb-4">
-                  Try one of these examples:
-                </p>
-                {examplePrompts.map((prompt, index) => (
-                  <motion.button
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => handleSubmit(prompt.text)}
-                    className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-accent transition-colors text-left"
-                  >
-                    <span className="text-primary">{prompt.icon}</span>
-                    <span>{prompt.text}</span>
-                  </motion.button>
-                ))}
-              </div>
-            )}
+            <AnimatePresence>
+              {showPromptEditor && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-8 p-4 rounded-lg border border-border bg-background"
+                >
+                  <PromptEditor onSelectTemplate={handlePromptSelect} />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="space-y-4">
               {messages.map((message, index) => (
                 <motion.div
-                  key={index}
+                  key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-4 rounded-lg ${message.role === "user"
-                    ? "bg-primary text-primary-foreground ml-auto max-w-[80%]"
-                    : "bg-muted max-w-[80%]"
-                    }`}
+                  className={`p-4 rounded-lg ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground ml-auto max-w-[80%]"
+                      : "bg-muted max-w-[80%]"
+                  }`}
                 >
                   {message.content}
+                  {message.toolCalls && message.toolCalls.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border/20">
+                      <ToolExecution toolCalls={message.toolCalls} />
+                    </div>
+                  )}
                 </motion.div>
               ))}
-              {isLoading && <LoadingSpinner />}
+              
+              {isLoading && (
+                <>
+                  {activeToolCalls.length > 0 && (
+                    <div className="max-w-[80%]">
+                      <ToolExecution toolCalls={activeToolCalls} />
+                    </div>
+                  )}
+                  <LoadingSpinner />
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -87,7 +177,7 @@ export default function ExplainPage() {
         <div className="border-t border-border p-6">
           <div className="max-w-3xl mx-auto">
             <ChatInput
-              onSubmit={handleSubmit}
+              onSubmit={handleDirectSubmit}
               placeholder="What would you like me to explain?"
             />
           </div>
