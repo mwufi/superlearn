@@ -37,7 +37,7 @@ export default function CurriculumPage({
       sessionStorage.removeItem(`curriculum-prompt-${id}`)
       submitCurriculum({ input: savedPrompt })
     }
-  }, [id, router])
+  }, [id, router, submitCurriculum])
 
   // Update curriculum when generation completes
   useEffect(() => {

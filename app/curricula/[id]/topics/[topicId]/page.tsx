@@ -17,7 +17,13 @@ export default function TopicPage({
   const router = useRouter()
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null)
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null)
-  const [savedContent, setSavedContent] = useState<any>(null)
+  const [savedContent, setSavedContent] = useState<{
+    overview: string
+    keyConcepts: string[]
+    practicalExamples: string[]
+    importantPoints: string[]
+    exercises: string[]
+  } | null>(null)
 
   const { object: contentData, submit: submitContent, isLoading: loadingContent } = useObject({
     api: "/api/generate-content",
@@ -50,12 +56,32 @@ export default function TopicPage({
   useEffect(() => {
     // Save content when it's generated
     if (contentData?.content && currentTopic) {
-      db.content.save({
-        curriculumId: id,
-        topicId: topicId,
-        content: contentData.content
-      })
-      setSavedContent(contentData.content)
+      // Check if all required properties are present
+      const content = contentData.content
+      if (content.overview !== undefined && 
+          content.keyConcepts !== undefined && 
+          content.practicalExamples !== undefined && 
+          content.importantPoints !== undefined && 
+          content.exercises !== undefined) {
+        db.content.save({
+          curriculumId: id,
+          topicId: topicId,
+          content: content as {
+            overview: string
+            keyConcepts: string[]
+            practicalExamples: string[]
+            importantPoints: string[]
+            exercises: string[]
+          }
+        })
+        setSavedContent(content as {
+          overview: string
+          keyConcepts: string[]
+          practicalExamples: string[]
+          importantPoints: string[]
+          exercises: string[]
+        })
+      }
     }
   }, [contentData, currentTopic, id, topicId])
 
@@ -68,7 +94,13 @@ export default function TopicPage({
     })
   }
 
-  const formatContent = (content: any) => {
+  const formatContent = (content: {
+    overview?: string
+    keyConcepts?: string[]
+    practicalExamples?: string[]
+    importantPoints?: string[]
+    exercises?: string[]
+  } | null) => {
     if (!content) return ""
 
     let formatted = ""

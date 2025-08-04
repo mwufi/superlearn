@@ -2,7 +2,13 @@ export interface Topic {
   id: string
   title: string
   description: string
-  content?: any
+  content?: {
+    overview: string
+    keyConcepts: string[]
+    practicalExamples: string[]
+    importantPoints: string[]
+    exercises: string[]
+  }
 }
 
 export interface Curriculum {
@@ -17,7 +23,13 @@ export interface StoredContent {
   id: string
   curriculumId: string
   topicId: string
-  content: any
+  content: {
+    overview: string
+    keyConcepts: string[]
+    practicalExamples: string[]
+    importantPoints: string[]
+    exercises: string[]
+  }
   createdAt: string
   updatedAt: string
 }

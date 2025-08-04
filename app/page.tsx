@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { db, type Curriculum } from "./db/storage"
 
 export default function HomePage() {
-  const router = useRouter()
   const [curricula, setCurricula] = useState<Curriculum[]>([])
 
   useEffect(() => {
