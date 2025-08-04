@@ -3,11 +3,11 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { 
-  Brain, 
-  Sparkles, 
-  GraduationCap, 
-  User, 
+import {
+  Brain,
+  Sparkles,
+  GraduationCap,
+  User,
   HelpCircle,
   MoreHorizontal,
   Github,
@@ -102,10 +102,10 @@ function SidebarContents() {
             </Link>
           ))}
         </SidebarGroup>
-        
+
         {!isCollapsed && (
           <div className="mt-6 px-3">
-            <ChatList 
+            <ChatList
               onNewChat={() => {
                 const newChat = createNewChat()
                 router.push(`/${activeItem}?chat=${newChat.id}`)
@@ -157,11 +157,11 @@ function SidebarContents() {
 export function MainLayout({ children }: MainLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex max-h-[calc(100vh-1rem)] h-screen overflow-hidden bg-background">
         <Sidebar>
           <SidebarContents />
         </Sidebar>
-        
+
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Top Bar */}
@@ -169,7 +169,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <SidebarTrigger />
             <h1 className="ml-4 text-lg font-semibold">Superlearn</h1>
           </header>
-          
+
           {/* Content */}
           <main className="flex-1 overflow-y-auto min-h-0">
             {children}
